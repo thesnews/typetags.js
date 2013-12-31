@@ -5,9 +5,16 @@
  * @copyright State News, Inc.
  * @license BSD
  */
-(function($){
-    $.fn.typeTags = function(){
-        var options = {
+// the semi-colon before function invocation is a safety net against concatenated
+// scripts and/or other plugins which may not be closed properly.
+;(function($) {
+
+    var rawDecode = function(str) {
+        return _.unescape(decodeURIComponent(str));
+    };
+
+    var pluginName = "typeTags",
+        defaults = {
             filter: function(results) {
                 var values = _.values(results[0].values);
                 var out = [];
@@ -24,15 +31,88 @@
                 }
                 return out;
             },
-            field: 'tags'
+            field: 'tags',
+            container: false,
+            source: false
         };
 
-        var rawDecode = function(str) {
-            return _.unescape(decodeURIComponent(str));
-        };
+    // The actual plugin constructor
+    function Plugin(element, options) {
+        this.element = element;
 
-        var prePopulate = function(target, container, field) {
-            var el = $('[name="'+field+'"]');
+        this.settings = $.extend({}, defaults, options);
+        this._defaults = defaults;
+        this._name = pluginName;
+        this.init();
+    }
+
+    Plugin.prototype = {
+        init: function () {
+            var $this = $(this.element);
+
+            this.settings.container = $this.attr('data-container');
+            this.settings.source = $this.attr('data-source');
+
+            $(this.settings.container).empty();
+
+            if( this.settings.field ) {
+                this.prePopulate();
+            }
+
+            var self = this;
+            $(this.settings.container).on('click', '.tagsinput-remove-link', function(e) {
+                var el = $(e.currentTarget);
+                var parent = el.parents('span.tag').first();
+
+                var val = parent.find('span').first();
+                parent.remove();
+                if( self.settings.field ) {
+                    self.popTag(val.text());
+                }
+            });
+
+            $this.typeahead({
+                name: this.settings.container.replace(/\./, ''),
+                limit: 15,
+                remote: {
+                    url: this.settings.source+'?q=%QUERY',
+                    filter: this.settings.filter
+                }
+            }).on('typeahead:selected', function (e, d) {
+                var tag = $('<span></span>')
+                    .addClass('tag')
+                    .append($('<span></span>').html(d.value+'&nbsp;&nbsp;'))
+                    .append($('<a class="tagsinput-remove-link"></a>'));
+                $(self.settings.container).append(tag);
+                $this.val('');
+
+                if( self.settings.field ) {
+                    self.pushTag(d.value);
+                }
+            }).on('keypress', function(e) {
+                if( e.keyCode != 13 ) {
+                    return;
+                }
+                var tag = $('<span></span>')
+                    .addClass('tag')
+                    .append($('<span></span>').html($(this).val()+'&nbsp;&nbsp;'))
+                    .append($('<a class="tagsinput-remove-link"></a>'));
+
+                $(self.settings.container).append(tag);
+                if( self.settings.field ) {
+                    self.pushTag($(this).val());
+                }
+
+                var evt = $.Event("keydown");
+                evt.which = 27;
+                $this.trigger(evt);
+                $this.val('');
+            });
+
+        },
+
+        prePopulate: function() {
+            var el = $('[name="'+this.settings.field+'"]');
             var vals = el.val();
             if( vals.length ) {
                 vals = vals.split(',');
@@ -40,19 +120,22 @@
                 return;
             }
 
+            $(this.settings.container).empty();
+
+            var self = this;
             _.forEach(vals, function(v) {
                 var tag = $('<span></span>')
                     .addClass('tag')
                     .append($('<span></span>').html(v+'&nbsp;&nbsp;'))
                     .append($('<a class="tagsinput-remove-link"></a>'));
-                $(container).append(tag);
+                $(self.settings.container).append(tag);
             });
 
-        };
+        },
 
-        var pushTag = function(tag, field) {
+        pushTag: function(tag) {
             tag = tag.trim();
-            var el = $('[name="'+field+'"]');
+            var el = $('[name="'+this.settings.field+'"]');
             var vals = el.val();
             if( vals.length ) {
                 vals = vals.split(',');
@@ -63,11 +146,11 @@
             vals.push(tag);
 
             el.val(vals.join(','));
-        };
+        },
 
-        var popTag = function(tag, field) {
+        popTag: function(tag) {
             tag = tag.trim();
-            var el = $('[name="'+field+'"]');
+            var el = $('[name="'+this.settings.field+'"]');
             var vals = el.val();
             if( vals.length ) {
                 vals = vals.split(',');
@@ -79,71 +162,22 @@
             });
 
             el.val(vals.join(','));
-        };
+        },
+    };
 
-        if( arguments.length ) {
-            $.extend(options, arguments[0]);
+    // A really lightweight plugin wrapper around the constructor,
+    // preventing against multiple instantiations
+    $.fn[pluginName] = function(options) {
+        if( options && options == 'reset' ) {
+            var pl = $(this).data("plugin_"+pluginName);
+            pl.prePopulate();
         }
-
-        return this.each(function(){
-            var $this = $(this);
-
-            var container = $this.attr('data-container'),
-                source = $this.attr('data-source');
-
-            if( options.field ) {
-                prePopulate($this, container, options.field);
+        return this.each(function() {
+            if( !$.data(this, "plugin_"+pluginName) ) {
+                $.data(this, "plugin_"+pluginName, new Plugin(this, options));
             }
-
-            $(container).on('click', '.tagsinput-remove-link', function(e) {
-                var el = $(e.currentTarget);
-                var parent = el.parents('span.tag').first();
-
-                var val = parent.find('span').first();
-                parent.remove();
-                if( options.field ) {
-                    popTag(val.text(), options.field);
-                }
-            });
-
-            $this.typeahead({
-              name: container.replace(/\,/, ''),
-              limit: 15,
-              remote: {
-                url: source+'?q=%QUERY',
-                filter: options.filter
-            }
-            }).on('typeahead:selected', function (e, d) {
-                var tag = $('<span></span>')
-                    .addClass('tag')
-                    .append($('<span></span>').html(d.value+'&nbsp;&nbsp;'))
-                    .append($('<a class="tagsinput-remove-link"></a>'));
-                $(container).append(tag);
-                $this.val('');
-
-                if( options.field ) {
-                    pushTag(d.value, options.field);
-                }
-            }).on('keypress', function(e) {
-                if( e.keyCode != 13 ) {
-                    return;
-                }
-                var tag = $('<span></span>')
-                    .addClass('tag')
-                    .append($('<span></span>').html($(this).val()+'&nbsp;&nbsp;'))
-                    .append($('<a class="tagsinput-remove-link"></a>'));
-
-                $(container).append(tag);
-                if( options.field ) {
-                    pushTag($(this).val(), options.field);
-                }
-
-                var evt = $.Event("keydown");
-                evt.which = 27;
-                $this.trigger(evt);
-                $this.val('');
-            });
         });
     };
 
 })(jQuery);
+
