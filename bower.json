@@ -1,0 +1,20 @@
+{
+  "name": "TypeTags",
+  "version": "1.0.0",
+  "authors": [
+    "Mike Joseph <mike@statenews.com>"
+  ],
+  "description": "Simple mashup between typeahead.js and Flat UI's Tags Input bits",
+  "license": "BSD",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "jquery": ">= 1.9.0",
+    "lodash": ">= 2.4.1"
+  }
+}
