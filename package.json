@@ -1,0 +1,22 @@
+{
+  "name": "typetags",
+  "version": "1.0.0",
+  "description": "Simple mashup between typeahead.js and Flat UI's Tags Input bits",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/thesnews/typetags.js.git"
+  },
+  "author": "Mike Joseph <mike@statenews.com>",
+  "license": "BSD",
+  "readmeFilename": "README.md",
+  "gitHead": "d8ba8bbd87aa12ece26076328a127de0007947f3",
+  "devDependencies": {
+    "grunt": "~0.4.2",
+    "grunt-contrib-uglify": "~0.2.7",
+    "grunt-contrib-less": "~0.8.3"
+  }
+}
