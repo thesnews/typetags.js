@@ -112,7 +112,7 @@
         },
 
         prePopulate: function() {
-            var el = $('[name="'+this.settings.field+'"]');
+            var el = $(this.settings.field);
             var vals = el.val();
             if( vals.length ) {
                 vals = vals.split(',');
@@ -135,7 +135,7 @@
 
         pushTag: function(tag) {
             tag = tag.trim();
-            var el = $('[name="'+this.settings.field+'"]');
+            var el = $(this.settings.field);
             var vals = el.val();
             if( vals.length ) {
                 vals = vals.split(',');
@@ -150,7 +150,7 @@
 
         popTag: function(tag) {
             tag = tag.trim();
-            var el = $('[name="'+this.settings.field+'"]');
+            var el = $(this.settings.field);
             var vals = el.val();
             if( vals.length ) {
                 vals = vals.split(',');
