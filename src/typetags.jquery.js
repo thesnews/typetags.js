@@ -31,6 +31,8 @@
                 }
                 return out;
             },
+            beforePick: function(){},
+            pick: function(){},
             field: 'tags',
             container: false,
             source: false
@@ -79,6 +81,7 @@
                     filter: this.settings.filter
                 }
             }).on('typeahead:selected', function (e, d) {
+                self.settings.beforePick.call(self);
                 var tag = $('<span></span>')
                     .addClass('tag')
                     .append($('<span></span>').html(d.value+'&nbsp;&nbsp;'))
@@ -93,6 +96,7 @@
                 if( e.keyCode != 13 ) {
                     return;
                 }
+                self.settings.beforePick.call(self);
                 var tag = $('<span></span>')
                     .addClass('tag')
                     .append($('<span></span>').html($(this).val()+'&nbsp;&nbsp;'))
@@ -102,7 +106,6 @@
                 if( self.settings.field ) {
                     self.pushTag($(this).val());
                 }
-
                 var evt = $.Event("keydown");
                 evt.which = 27;
                 $this.trigger(evt);
@@ -144,6 +147,7 @@
             }
 
             vals.push(tag);
+            this.settings.pick.call(this);
 
             el.val(vals.join(','));
         },
